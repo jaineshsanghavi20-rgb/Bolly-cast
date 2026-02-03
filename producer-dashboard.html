@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>BOLLYCAST | Producer Dashboard</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+<link rel="stylesheet" href="css/responsive.css">
+<style>
+body{
+    background:#0b0b0b;
+    color:#fff;
+}
+.navbar{background:#000;}
+.brand-text{font-size:26px;font-weight:700;color:#dad8d3;}
+
+.sidebar{
+    background:#111;
+    min-height:100vh;
+    padding:25px;
+}
+.sidebar a{
+    display:block;
+    padding:12px 0;
+    color:#ccc;
+    text-decoration:none;
+}
+.sidebar a.active,
+.sidebar a:hover{color:#f5c518;}
+
+.app-card{
+    background:#161616;
+    border-radius:18px;
+    padding:22px;
+    margin-bottom:22px;
+}
+
+.badge-approved{background:#28a745;}
+.badge-rejected{background:#dc3545;}
+.badge-processing{background:#ffc107;color:#000;}
+
+.btn-pay{
+    background:#f5c518;
+    color:#000;
+    font-weight:600;
+}
+.btn-accept{
+    background:#28a745;
+    color:#000;
+    font-weight:600;
+}
+.btn-reject{
+    background:#dc3545;
+    color:#000;
+    font-weight:600;
+}
+
+.small-text{color:#aaa;font-size:14px;}
+
+/* 🔍 FILTER DROPDOWN DARK */
+.form-select{
+    background-color:#0f0f0f;
+    color:#fff;
+    border:1px solid #333;
+}
+
+.form-select:focus{
+    background-color:#0f0f0f;
+    color:#fff;
+    border-color:#f5c518;
+    box-shadow:none;
+}
+
+/* Dropdown arrow white */
+.form-select option{
+    background:#0f0f0f;
+    color:#fff;
+}
+
+</style>
+</head>
+
+<body>
+
+<script>
+if(sessionStorage.getItem("producerLoggedIn")!=="true"){
+    window.location.href="producer-login.html";
+}
+</script>
+
+<nav class="navbar navbar-dark px-4">
+<span class="navbar-brand brand-text">BOLLYCAST</span>
+<span class="small-text">Producer Panel</span>
+</nav>
+
+<div class="container-fluid">
+<div class="row">
+
+<!-- SIDEBAR -->
+<div class="col-md-3 sidebar">
+    <a href="#" onclick="showTab('application')"><i class="fa-solid fa-users"></i> Applications</a>
+    <a href="#" onclick="showTab('accepted')"><i class="fa-solid fa-check"></i> Accepted</a>
+    <a href="#" onclick="showTab('rejected')"><i class="fa-solid fa-xmark"></i> Rejected</a>
+    <a href="index.html" onclick="sessionStorage.removeItem('producerLoggedIn')">
+        <i class="fa-solid fa-right-from-bracket"></i> Logout
+    </a>
+</div>
+
+<!-- MAIN -->
+<div class="col-md-9 p-4">
+
+<h3 class="mb-3">Applied Candidates</h3>
+
+<!-- FILTERS -->
+<div class="d-flex gap-3 mb-4">
+<select class="form-select w-auto" id="typeFilter" onchange="render()">
+    <option value="All">All Types</option>
+    <option value="Movie">Movie</option>
+    <option value="Web Series">Web Series</option>
+    <option value="Advertisement">Advertisement</option>
+</select>
+
+<select class="form-select w-auto" id="statusFilter" onchange="render()">
+    <option value="All">All Supervisor Status</option>
+    <option value="Approved">Supervisor Approved</option>
+    <option value="Rejected">Supervisor Rejected</option>
+    <option value="Processing">Under Processing</option>
+</select>
+</div>
+
+<div id="list"></div>
+
+</div>
+</div>
+</div>
+
+<script>
+let currentTab="main";
+
+let candidates=[
+{ name:"Neha Verma", role:"Actress", type:"Movie", city:"Delhi", salary:90000, supervisor:"Approved", paid:false, final:"Processing"},
+{ name:"Aman Shah", role:"Actor", type:"Web Series", city:"Mumbai", salary:120000, supervisor:"Approved", paid:true, final:"Processing"},
+{ name:"Riya Patel", role:"Model", type:"Advertisement", city:"Ahmedabad", salary:20000, supervisor:"Rejected", paid:false, final:"Processing"},
+{ name:"Kunal Mehta", role:"Actor", type:"Movie", city:"Pune", salary:70000, supervisor:"Processing", paid:false, final:"Processing"},
+{ name:"Simran Kaur", role:"Actress", type:"Web Series", city:"Chandigarh", salary:50000, supervisor:"Approved", paid:false, final:"Processing"},
+{ name:"Rahul Roy", role:"Actor", type:"Movie", city:"Kolkata", salary:60000, supervisor:"Rejected", paid:false, final:"Processing"},
+{ name:"Pooja Jain", role:"Model", type:"Advertisement", city:"Jaipur", salary:25000, supervisor:"Approved", paid:true, final:"Accepted"},
+{ name:"Vikas Malhotra", role:"Actor", type:"Web Series", city:"Delhi", salary:80000, supervisor:"Processing", paid:false, final:"Processing"},
+{ name:"Anjali Desai", role:"Actress", type:"Movie", city:"Mumbai", salary:95000, supervisor:"Approved", paid:false, final:"Processing"},
+{ name:"Mohit Singh", role:"Actor", type:"Advertisement", city:"Noida", salary:30000, supervisor:"Rejected", paid:false, final:"Rejected"},
+{ name:"Mohit Singh", role:"Actor", type:"Advertisement", city:"Noida", salary:30000, supervisor:"Rejected", paid:false, final:"Processing"}
+
+];
+
+function showTab(tab){
+    currentTab=tab;
+    render();
+}
+
+function payCommission(i){
+    candidates[i].paid=true;
+    alert("Commission Paid to BOLLYCAST (30%)");
+    render();
+}
+
+function acceptCandidate(i){
+    if(!candidates[i].paid){
+        alert("Please pay commission first");
+        return;
+    }
+
+    candidates[i].final = "Accepted";
+
+    sendUserNotification(
+        "🎉 You Are Selected!",
+        `Congratulations! You have been selected for ${candidates[i].type} project.
+Salary: ₹${candidates[i].salary}`
+    );
+
+    render();
+}
+
+
+function rejectCandidate(i){
+    candidates[i].final = "Rejected";
+
+    sendUserNotification(
+        "❌ Application Rejected",
+        `Your application for ${candidates[i].type} project has been rejected by the producer.`
+    );
+
+    render();
+}
+
+
+function render(){
+    const list=document.getElementById("list");
+    list.innerHTML="";
+
+    const typeF=document.getElementById("typeFilter").value;
+    const statusF=document.getElementById("statusFilter").value;
+
+    candidates.forEach((c,i)=>{
+
+        if(currentTab==="accepted" && c.final!=="Accepted") return;
+        if(currentTab==="rejected" && c.final!=="Rejected") return;
+        if(currentTab==="main" && c.final!=="Processing") return;
+
+        if(typeF!=="All" && c.type!==typeF) return;
+        if(statusF!=="All" && c.supervisor!==statusF) return;
+
+        let badge=`badge-processing`;
+        if(c.supervisor==="Approved") badge="badge-approved";
+        if(c.supervisor==="Rejected") badge="badge-rejected";
+
+        list.innerHTML+=`
+        <div class="app-card">
+            <h5>${c.name}</h5>
+            <p class="small-text">${c.role} • ${c.type}</p>
+            <p class="small-text">📍 ${c.city} | 💰 ₹${c.salary}</p>
+
+            <span class="badge ${badge} mb-2">
+                Supervisor ${c.supervisor}
+            </span>
+
+            <br><br>
+
+            ${
+            c.supervisor==="Approved" && c.final==="Processing"
+            ? `
+            ${!c.paid ? `<button class="btn btn-pay btn-sm me-2" onclick="payCommission(${i})">Pay 30% Commission</button>`:""}
+            <button class="btn btn-accept btn-sm me-2" onclick="acceptCandidate(${i})">Accept</button>
+            <button class="btn btn-reject btn-sm" onclick="rejectCandidate(${i})">Reject</button>
+            `
+            : `<span class="small-text">No action available</span>`
+            }
+        </div>
+        `;
+    });
+}
+
+render();
+
+
+function sendUserNotification(title, message){
+    let notifications =
+        JSON.parse(localStorage.getItem("userNotifications")) || [];
+
+    notifications.unshift({
+        title: title,
+        message: message,
+        time: new Date().toLocaleString()
+    });
+
+    localStorage.setItem(
+        "userNotifications",
+        JSON.stringify(notifications)
+    );
+}
+
+
+</script>
+
+</body>
+</html>
